@@ -1,9 +1,7 @@
-using System.Text.Json.Serialization;
 using AutoMapper;
 using Microsoft.EntityFrameworkCore;
 using PlatformServiceApi.Data;
 using PlatformServiceApi.Models;
-using PlatformServiceApi.Models.Pattern;
 using PlatformServiceApi.Records;
 
 var builder = WebApplication.CreateSlimBuilder(args);
@@ -42,7 +40,8 @@ platformApi.MapPost("/",
         await platformRepository.CreatePlatformAsync(mappedPlatform);
         var isSuccessful = await platformRepository.SaveChangesAsync();
         return isSuccessful
-            ? Results.CreatedAtRoute("GetPlatformById", new{Id = mappedPlatform.Id}, mapper.Map<PlatformRead>(mappedPlatform))
+            ? Results.CreatedAtRoute("GetPlatformById", new { mappedPlatform.Id },
+                mapper.Map<PlatformRead>(mappedPlatform))
             : Results.BadRequest("Could not create platform");
     });
 
