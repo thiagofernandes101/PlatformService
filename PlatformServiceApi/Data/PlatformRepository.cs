@@ -6,7 +6,7 @@ namespace PlatformServiceApi.Data;
 
 public interface IPlatformRepository
 {
-    public Task CreatePlatform(Platform platform);
+    public Task CreatePlatformAsync(Platform platform);
     public Task<IList<Platform>> GetAllPlatformsAsync();
     public Task<Result<Platform>> GetPlatformByIdAsync(int id);
     public Task<bool> SaveChangesAsync();
@@ -21,7 +21,7 @@ public class PlatformRepository : IPlatformRepository
         _context = context;
     }
     
-    public async Task CreatePlatform(Platform platform)
+    public async Task CreatePlatformAsync(Platform platform)
     {
         ArgumentNullException.ThrowIfNull(platform);
         await _context.Platforms.AddAsync(platform);

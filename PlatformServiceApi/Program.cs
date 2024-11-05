@@ -2,6 +2,8 @@ using System.Text.Json.Serialization;
 using AutoMapper;
 using Microsoft.EntityFrameworkCore;
 using PlatformServiceApi.Data;
+using PlatformServiceApi.Models;
+using PlatformServiceApi.Models.Pattern;
 using PlatformServiceApi.Records;
 
 var builder = WebApplication.CreateSlimBuilder(args);
@@ -9,10 +11,6 @@ var builder = WebApplication.CreateSlimBuilder(args);
 builder.Services.AddDbContext<PlatformContext>(options => options.UseInMemoryDatabase("InMemoryDatabase"));
 builder.Services.AddScoped<IPlatformRepository, PlatformRepository>();
 builder.Services.AddAutoMapper(AppDomain.CurrentDomain.GetAssemblies());
-builder.Services.ConfigureHttpJsonOptions(options =>
-{
-    options.SerializerOptions.TypeInfoResolverChain.Insert(0, AppJsonSerializerContext.Default);
-});
 
 var app = builder.Build();
 
@@ -32,16 +30,20 @@ platformApi.MapGet("/", async (IPlatformRepository platformRepository, IMapper m
 platformApi.MapGet("/{id}", async (int id, IPlatformRepository platformRepository, IMapper mapper) =>
 {
     var platform = await platformRepository.GetPlatformByIdAsync(id);
-    return platform.IsSuccess 
-        ? Results.Ok(mapper.Map<PlatformRead>(platform.Value)) 
+    return platform.IsSuccess
+        ? Results.Ok(mapper.Map<PlatformRead>(platform.Value))
         : Results.NotFound(platform.Error);
-});
+}).WithName("GetPlatformById");
+
+platformApi.MapPost("/",
+    async (PlatformCreate platform, IPlatformRepository platformRepository, IMapper mapper) =>
+    {
+        var mappedPlatform = mapper.Map<Platform>(platform);
+        await platformRepository.CreatePlatformAsync(mappedPlatform);
+        var isSuccessful = await platformRepository.SaveChangesAsync();
+        return isSuccessful
+            ? Results.CreatedAtRoute("GetPlatformById", new{Id = mappedPlatform.Id}, mapper.Map<PlatformRead>(mappedPlatform))
+            : Results.BadRequest("Could not create platform");
+    });
 
 app.Run();
-
-public record Todo(int Id, string? Title, DateOnly? DueBy = null, bool IsComplete = false);
-
-[JsonSerializable(typeof(Todo[]))]
-internal partial class AppJsonSerializerContext : JsonSerializerContext
-{
-}
